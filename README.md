@@ -1,8 +1,8 @@
 # Certificate Transparency: Go Code
 
-[![Build Status](https://travis-ci.org/google/certificate-transparency-go.svg?branch=master)](https://travis-ci.org/google/certificate-transparency-go)
 [![Go Report Card](https://goreportcard.com/badge/github.com/google/certificate-transparency-go)](https://goreportcard.com/report/github.com/google/certificate-transparency-go)
 [![GoDoc](https://godoc.org/github.com/google/certificate-transparency-go?status.svg)](https://godoc.org/github.com/google/certificate-transparency-go)
+![CodeQL workflow](https://github.com/google/certificate-transparency-go/actions/workflows/codeql.yml/badge.svg)
 
 This repository holds Go code related to
 [Certificate Transparency](https://www.certificate-transparency.org/) (CT).  The
@@ -71,10 +71,7 @@ and is [documented separately](trillian/README.md).
 ## Working on the Code
 
 Developers who want to make changes to the codebase need some additional
-dependencies and tools, described in the following sections.  The
-[Travis configuration](.travis.yml) for the codebase is also useful reference
-for the required tools and scripts, as it may be more up-to-date than this
-document.
+dependencies and tools, described in the following sections.
 
 ### Running Codebase Checks
 

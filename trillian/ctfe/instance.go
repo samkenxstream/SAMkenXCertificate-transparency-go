@@ -17,6 +17,9 @@ package ctfe
 import (
 	"context"
 	"crypto"
+	"crypto/ecdsa"
+	"crypto/ed25519"
+	"crypto/rsa"
 	"errors"
 	"fmt"
 	"net/http"
@@ -92,6 +95,14 @@ func (i *Instance) RunUpdateSTH(ctx context.Context, period time.Duration) {
 	})
 }
 
+// GetPublicKey returns the public key from the instance's signer.
+func (i *Instance) GetPublicKey() crypto.PublicKey {
+	if i.li != nil && i.li.signer != nil {
+		return i.li.signer.Public()
+	}
+	return nil
+}
+
 // SetUpInstance sets up a log (or log mirror) instance using the provided
 // configuration, and returns an object containing a set of handlers for this
 // log, and an STH getter.
@@ -125,6 +136,26 @@ func setUpLogInfo(ctx context.Context, opts InstanceOptions) (*logInfo, error) {
 		var err error
 		if signer, err = keys.NewSigner(ctx, vCfg.PrivKey); err != nil {
 			return nil, fmt.Errorf("failed to load private key: %v", err)
+		}
+
+		// If a public key has been configured for a log, check that it is consistent with the private key.
+		if vCfg.PubKey != nil {
+			switch pub := vCfg.PubKey.(type) {
+			case *ecdsa.PublicKey:
+				if !pub.Equal(signer.Public()) {
+					return nil, errors.New("public key is not consistent with private key")
+				}
+			case ed25519.PublicKey:
+				if !pub.Equal(signer.Public()) {
+					return nil, errors.New("public key is not consistent with private key")
+				}
+			case *rsa.PublicKey:
+				if !pub.Equal(signer.Public()) {
+					return nil, errors.New("public key is not consistent with private key")
+				}
+			default:
+				return nil, errors.New("failed to verify consistency of public key with private key")
+			}
 		}
 	}
 
