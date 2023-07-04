@@ -2,6 +2,33 @@
 
 ## HEAD
 
+### Fix flaky submission failures
+* #1084: CT flaky submission failures
+
+### Add support for WASI port
+* Add build tags for wasip1 GOOS
+
+### Add support for IBM Z operating system z/OS
+* Add build tags for zos
+
+### Chrome CT Policy Update
+ * #906: Update chromepolicy.go to follow the updated Chrome CT policy.
+
+### LogList
+ * Add support for "is_all_logs" field
+
+### Misc
+ * #1059: Escape forward slashes in certificate Subject names when used as user quota id strings.
+
+## v1.1.6
+
+## Dependency update
+
+ * Bump Trillian to v1.5.2
+ * Bump Prometheus to v0.43.1
+
+## v1.1.5
+
 ### Public/Private Key Consistency
 
  * #1044: If a public key has been configured for a log, check that it is consistent with the private key.
@@ -11,7 +38,7 @@
 
  * Remove v2 log list package files.
 
- ### Misc
+### Misc
 
  * Updated golangci-lint to v1.51.1 (developers should update to this version).
  * Bump Go version from 1.17 to 1.19.

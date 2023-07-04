@@ -29,7 +29,9 @@ import (
 
 func testdataSCT() *ct.SignedCertificateTimestamp {
 	var sct ct.SignedCertificateTimestamp
-	tls.Unmarshal(testdata.TestPreCertProof, &sct)
+	if _, err := tls.Unmarshal(testdata.TestPreCertProof, &sct); err != nil {
+		panic(err)
+	}
 	return &sct
 }
 
@@ -91,7 +93,7 @@ func TestGetSCTs(t *testing.T) {
 			name:   "singleGroupOneSCT",
 			sbMock: &mockSubmitter{fixedDelay: map[byte]time.Duration{'a': 0}, firstLetterURLReqNumber: make(map[byte]int)},
 			groups: ctpolicy.LogPolicyData{
-				"a": {
+				ctpolicy.BaseName: {
 					Name:          "a",
 					LogURLs:       map[string]bool{"a1.com": true, "a2.com": true},
 					MinInclusions: 1,
@@ -105,7 +107,7 @@ func TestGetSCTs(t *testing.T) {
 			name:   "singleGroupMultiSCT",
 			sbMock: &mockSubmitter{fixedDelay: map[byte]time.Duration{'a': 0}, firstLetterURLReqNumber: make(map[byte]int)},
 			groups: ctpolicy.LogPolicyData{
-				"a": {
+				ctpolicy.BaseName: {
 					Name:          "a",
 					LogURLs:       map[string]bool{"a1.com": true, "a2.com": true, "a3.com": true, "a4.com": true, "a5.com": true},
 					MinInclusions: 3,
@@ -122,26 +124,49 @@ func TestGetSCTs(t *testing.T) {
 				"a": {
 					Name:          "a",
 					LogURLs:       map[string]bool{"a1.com": true, "a2.com": true, "a3.com": true, "a4.com": true},
-					MinInclusions: 1,
+					MinInclusions: 0,
 					IsBase:        false,
 					LogWeights:    map[string]float32{"a1.com": 1.0, "a2.com": 1.0, "a3.com": 1.0, "a4.com": 1.0},
 				},
 				"b": {
 					Name:          "b",
 					LogURLs:       map[string]bool{"b1.com": true, "b2.com": true, "b3.com": true, "b4.com": true},
-					MinInclusions: 1,
+					MinInclusions: 0,
 					IsBase:        false,
 					LogWeights:    map[string]float32{"b1.com": 1.0, "b2.com": 1.0, "b3.com": 1.0, "b4.com": 1.0},
 				},
 				ctpolicy.BaseName: {
-					Name:          ctpolicy.BaseName,
-					LogURLs:       map[string]bool{"a1.com": true, "a2.com": true, "a3.com": true, "a4.com": true, "b1.com": true, "b2.com": true, "b3.com": true, "b4.com": true},
-					MinInclusions: 5,
-					IsBase:        true,
-					LogWeights:    map[string]float32{"a1.com": 1.0, "a2.com": 1.0, "a3.com": 1.0, "a4.com": 1.0, "b1.com": 1.0, "b2.com": 1.0, "b3.com": 1.0, "b4.com": 1.0},
+					Name:                 ctpolicy.BaseName,
+					LogURLs:              map[string]bool{"a1.com": true, "a2.com": true, "a3.com": true, "a4.com": true, "b1.com": true, "b2.com": true, "b3.com": true, "b4.com": true},
+					MinInclusions:        2,
+					MinDistinctOperators: 2,
+					IsBase:               true,
+					LogWeights:           map[string]float32{"a1.com": 1.0, "a2.com": 1.0, "a3.com": 1.0, "a4.com": 1.0, "b1.com": 1.0, "b2.com": 1.0, "b3.com": 1.0, "b4.com": 1.0},
 				},
 			},
-			resultTrail: map[string]int{"a": 1, "b": 1, ctpolicy.BaseName: 5},
+			resultTrail: map[string]int{"a": 1, "b": 1, ctpolicy.BaseName: 2},
+		},
+		{
+			name:   "notEnoughDistinctOperators",
+			sbMock: &mockSubmitter{fixedDelay: map[byte]time.Duration{'a': 0, 'b': 2 * time.Second}, firstLetterURLReqNumber: make(map[byte]int)},
+			groups: ctpolicy.LogPolicyData{
+				"a": {
+					Name:          "a",
+					LogURLs:       map[string]bool{"a1.com": true, "a2.com": true, "a3.com": true, "a4.com": true},
+					MinInclusions: 1,
+					IsBase:        false,
+					LogWeights:    map[string]float32{"a1.com": 1.0, "a2.com": 1.0, "a3.com": 1.0, "a4.com": 1.0},
+				},
+				ctpolicy.BaseName: {
+					Name:                 ctpolicy.BaseName,
+					LogURLs:              map[string]bool{"a1.com": true, "a2.com": true, "a3.com": true, "a4.com": true},
+					MinInclusions:        2,
+					MinDistinctOperators: 2,
+					IsBase:               true,
+					LogWeights:           map[string]float32{"a1.com": 1.0, "a2.com": 1.0, "a3.com": 1.0, "a4.com": 1.0},
+				},
+			},
+			errRegexp: regexp.MustCompile("didn't receive enough SCTs"),
 		},
 	}
 
